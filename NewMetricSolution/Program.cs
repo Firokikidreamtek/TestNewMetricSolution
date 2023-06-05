@@ -1,11 +1,9 @@
-using Mapper;
 using Microsoft.EntityFrameworkCore;
 using NewMetricSolution.DB;
 using NewMetricSolution.DB.DBContexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
                        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 

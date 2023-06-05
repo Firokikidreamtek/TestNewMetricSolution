@@ -1,64 +1,55 @@
-﻿using AutoMapper;
-using Domains.DTO;
-using Entities;
-using Entities.Departments;
+﻿using Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using NewMetricSolution.DB.DBContexts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using NewMetricSolution.DB.TreeStructure;
+using static NewMetricSolution.DB.TreeStructure.TreeExtensions;
 
 namespace NewMetricSolution.DB
 {
     public class EmployeesBase : IEmployeesBase
     {
-        private readonly IMapper _mapper;
         private readonly ApplicationDbContext _databaseContext;
 
-        public EmployeesBase(ApplicationDbContext databaseContext, IMapper mapper)
+
+        public EmployeesBase(ApplicationDbContext databaseContext)
         {
             _databaseContext = databaseContext;
-            _mapper = mapper;
+
         }
 
 
-        public ComplexObject CreateComplexObjectForView()
+        public List<ITree<Department>> CreateComplexObjectForView()
         {
-            var complexObject = _databaseContext.ComplexObject
-                               .Include(x => x.CustomerServiceDepartment).ThenInclude(x => x.SalesDepartment).ThenInclude(x => x.RetailSalesDepartment)
-                               .Include(x => x.CustomerServiceDepartment).ThenInclude(x => x.SalesDepartment).ThenInclude(x => x.WholesaleSalesDepartment)
-                               .Include(x => x.CustomerServiceDepartment).ThenInclude(x => x.LogisticsDepartment).ThenInclude(x => x.DeliveryDepartment)
-                               .Include(x => x.CustomerServiceDepartment).ThenInclude(x => x.LogisticsDepartment).ThenInclude(x => x.StorageDepartment)
-                               .Include(x => x.ProductionDepartment).ThenInclude(x => x.PurchasingDepartment)
-                               .Include(x => x.ProductionDepartment).ThenInclude(x => x.QualityControlDepartment)
-                               .Include(x => x.ProductionDepartment).ThenInclude(x => x.EngineeringDepartment)
-                               .Include(x => x.AccountingDepartment).AsNoTracking().FirstOrDefault();
-            return complexObject;
+            List<Department> all = _databaseContext.Departments.Include(x => x.SuperiorDepartment).AsNoTracking().OrderBy(x => x.Name).ToList();
+            ITree<Department> virtualRootNode = all.ToTree((parent, child) => child.SuperiorDepartmentId == parent.Id);
+            List<ITree<Department>> _treeOfDepartments = virtualRootNode.Children.ToList();
+
+            return _treeOfDepartments;
         }
 
-        private ComplexObject CreateComplexObject()
+        private List<T> GetParents<T>(ITree<T> node, List<T> parentNodes = null) where T : class
         {
-            var complexObject = _databaseContext.ComplexObject
-                               .Include(x => x.CustomerServiceDepartment).ThenInclude(x => x.SalesDepartment).ThenInclude(x => x.RetailSalesDepartment)
-                               .Include(x => x.CustomerServiceDepartment).ThenInclude(x => x.SalesDepartment).ThenInclude(x => x.WholesaleSalesDepartment)
-                               .Include(x => x.CustomerServiceDepartment).ThenInclude(x => x.LogisticsDepartment).ThenInclude(x => x.DeliveryDepartment)
-                               .Include(x => x.CustomerServiceDepartment).ThenInclude(x => x.LogisticsDepartment).ThenInclude(x => x.StorageDepartment)
-                               .Include(x => x.ProductionDepartment).ThenInclude(x => x.PurchasingDepartment)
-                               .Include(x => x.ProductionDepartment).ThenInclude(x => x.QualityControlDepartment)
-                               .Include(x => x.ProductionDepartment).ThenInclude(x => x.EngineeringDepartment)
-                               .Include(x => x.AccountingDepartment).FirstOrDefault();
-            return complexObject;
+            while (true)
+            {
+                parentNodes ??= new List<T>();
+                if (node?.Parent?.Data == null) return parentNodes;
+                parentNodes.Add(node.Parent.Data);
+                node = node.Parent;
+            }
         }
 
-        public void IncreaseNumberOfEmployees(ComplexObjectDTO @object)
+
+        public void IncreaseNumberOfEmployees(string department)
         {
-            var complexObject = CreateComplexObject();
-            complexObject = _mapper.Map(@object, complexObject);
+            List<Department> all = _databaseContext.Departments.Include(x => x.SuperiorDepartment).OrderBy(x => x.Name).ToList();
+            ITree<Department> virtualRootNode = all.ToTree((parent, child) => child.SuperiorDepartmentId == parent.Id);
+            List<ITree<Department>> flattenedListOfDepartmentNodes = virtualRootNode.Children.Flatten(node => node.Children).ToList();
+            ITree<Department> departmentNode = flattenedListOfDepartmentNodes.First(node => node.Data.Name == department);
+            List<Department> parents = GetParents(departmentNode);
+            parents.ForEach(node => node.Employees++);
+            departmentNode.Data.Employees++;
             _databaseContext.SaveChanges();
+
         }
 
     }

@@ -1,9 +1,4 @@
 ﻿using Entities;
-using Entities.Departments;
-using Entities.Departments.CustomerService;
-using Entities.Departments.CustomerService.Logistic;
-using Entities.Departments.CustomerService.Sales;
-using Entities.Departments.Production;
 using Microsoft.EntityFrameworkCore;
 
 namespace NewMetricSolution.DB.DBContexts
@@ -14,75 +9,62 @@ namespace NewMetricSolution.DB.DBContexts
         {
             Database.EnsureCreated();
         }
-        public DbSet<ComplexObject> ComplexObject { get; set; }
-
-        public DbSet<CustomerServiceDepartment> CustomerServiceDepartment { get; set; }
-
-        public DbSet<SalesDepartment> SalesDepartment { get; set; }
-        public DbSet<RetailSalesDepartment> RetailSalesDepartment { get; set; }
-        public DbSet<WholesaleSalesDepartment> WholesaleSalesDepartment { get; set; }
-
-        public DbSet<LogisticsDepartment> LogisticsDepartment { get; set; }
-        public DbSet<DeliveryDepartment> DeliveryDepartment { get; set; }
-        public DbSet<StorageDepartment> StorageDepartment { get; set; }
-
-        public DbSet<ProductionDepartment> ProductionDepartment { get; set; }
-        public DbSet<EngineeringDepartment> EngineeringDepartment { get; set; }
-        public DbSet<PurchasingDepartment> PurchasingDepartment { get; set; }
-        public DbSet<QualityControlDepartment> QualityControlDepartment { get; set; }
-
-        public DbSet<AccountingDepartment> AccountingDepartment { get; set; }
+        public DbSet<Department> Departments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            #region ComplexObject
-            var complexObject = new ComplexObject { Id = 1 };
-            modelBuilder.Entity<ComplexObject>().HasData(complexObject);
+            modelBuilder.Entity<Department>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Name);
+                entity.HasOne(x => x.SuperiorDepartment)
+
+                    .WithMany(x => x.SubDepartments)
+                    .HasForeignKey(x => x.SuperiorDepartmentId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
             #region Customer
-            var customer = new CustomerServiceDepartment { Id = 1, Employees = 11, ComplexObjectId = complexObject.Id };
-            modelBuilder.Entity<CustomerServiceDepartment>().HasData(customer);
+            var firstHeadDepartment = new Department { Id = Guid.NewGuid(), Employees = 11, Name = "CustomerServiceDepartment" };
+            modelBuilder.Entity<Department>().HasData(firstHeadDepartment);
             #region Sales
-            var allSales = new SalesDepartment { Id = 1, Employees = 4, CustomerServiceDepartmentId = customer.Id };
-            var retail = new RetailSalesDepartment() { Id = 1, Employees = 2, SalesDepartmentId = allSales.Id };
-            var whole = new WholesaleSalesDepartment() { Id = 1, Employees = 2, SalesDepartmentId = allSales.Id };
-            modelBuilder.Entity<SalesDepartment>().HasData(allSales);
-            modelBuilder.Entity<WholesaleSalesDepartment>().HasData(whole);
-            modelBuilder.Entity<RetailSalesDepartment>().HasData(retail);
+            var salesDepartment = new Department { Id = Guid.NewGuid(), Employees = 4, SuperiorDepartmentId = firstHeadDepartment.Id, Name = "SalesDepartment" };
+            modelBuilder.Entity<Department>().HasData(salesDepartment);
+            var retail = new Department() { Id = Guid.NewGuid(), Employees = 2, SuperiorDepartmentId = salesDepartment.Id, Name = "RetailDepartment" };
+            var whole = new Department() { Id = Guid.NewGuid(), Employees = 2, SuperiorDepartmentId = salesDepartment.Id, Name = "WholeDepartment" };
+            modelBuilder.Entity<Department>().HasData(whole);
+            modelBuilder.Entity<Department>().HasData(retail);
             #endregion
 
             #region Logistic
-            var logistic = new LogisticsDepartment { Id = 1, Employees = 7, CustomerServiceDepartmentId= customer.Id };
-            var delivery = new DeliveryDepartment() { Id = 1, Employees = 5, LogisticsDepartmentId = logistic.Id };
-            var storage = new StorageDepartment() { Id = 1, Employees = 2, LogisticsDepartmentId = logistic.Id };
-            modelBuilder.Entity<LogisticsDepartment>().HasData(logistic);
-            modelBuilder.Entity<DeliveryDepartment>().HasData(delivery);
-            modelBuilder.Entity<StorageDepartment>().HasData(storage);
+            var logisticDepartment = new Department { Id = Guid.NewGuid(), Employees = 7, SuperiorDepartmentId = firstHeadDepartment.Id, Name = "LogisticDepartment" };
+            modelBuilder.Entity<Department>().HasData(logisticDepartment);
+            var delivery = new Department() { Id = Guid.NewGuid(), Employees = 5, SuperiorDepartmentId = logisticDepartment.Id, Name = "DeliveryDepartment" };
+            var storage = new Department() { Id = Guid.NewGuid(), Employees = 2, SuperiorDepartmentId = logisticDepartment.Id, Name = "StorageDepartment" };
+            modelBuilder.Entity<Department>().HasData(delivery);
+            modelBuilder.Entity<Department>().HasData(storage);
             #endregion
 
             #endregion
 
             #region Production
-            var production = new ProductionDepartment { Id = 1, Employees = 7, ComplexObjectId = complexObject.Id };
-            var engineering = new EngineeringDepartment() { Id = 1, Employees = 4, ProductionDepartmentId = production.Id };
-            var qualityControl = new QualityControlDepartment() { Id = 1, Employees = 2, ProductionDepartmentId = production.Id };
-            var purchasing = new PurchasingDepartment() { Id = 1, Employees = 1, ProductionDepartmentId = production.Id };
-            modelBuilder.Entity<ProductionDepartment>().HasData(production);
-            modelBuilder.Entity<EngineeringDepartment>().HasData(engineering);
-            modelBuilder.Entity<QualityControlDepartment>().HasData(qualityControl);
-            modelBuilder.Entity<PurchasingDepartment>().HasData(purchasing);
+            var productionDepartment = new Department { Id = Guid.NewGuid(), Employees = 7, Name = "ProductionDepartment" };
+            modelBuilder.Entity<Department>().HasData(productionDepartment);
+            var engineering = new Department() { Id = Guid.NewGuid(), Employees = 4,  SuperiorDepartmentId = productionDepartment.Id, Name = "EngineeringDepartment" };
+            var qualityControl = new Department() { Id = Guid.NewGuid(), Employees = 2, SuperiorDepartmentId = productionDepartment.Id, Name = "QualityControlDepartment" };
+            var purchasing = new Department() { Id = Guid.NewGuid(), Employees = 1, SuperiorDepartmentId = productionDepartment.Id, Name = "PurchasingDepartment" };
+            modelBuilder.Entity<Department>().HasData(engineering);
+            modelBuilder.Entity<Department>().HasData(qualityControl);
+            modelBuilder.Entity<Department>().HasData(purchasing);
             #endregion
 
             #region Accounting
-            var accounting = new AccountingDepartment { Id = 1, Employees = 2, ComplexObjectId = complexObject.Id };
-            modelBuilder.Entity<AccountingDepartment>().HasData(accounting);
+            var accountingDepartment = new Department { Id = Guid.NewGuid(), Employees = 2, Name = "AccountingDepartment" };
+            modelBuilder.Entity<Department>().HasData(accountingDepartment);
             #endregion
 
-            #endregion
         }
 
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //{
-        //    optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=usersdb;Username=postgres;Password=пароль_от_postgres");
-        //}
     }
 }

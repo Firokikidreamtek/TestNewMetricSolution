@@ -1,17 +1,12 @@
-﻿using Domains.DTO;
-using Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Entities;
+using NewMetricSolution.DB.TreeStructure;
 
 namespace NewMetricSolution.DB
 {
     public interface IEmployeesBase
     {
-        public ComplexObject CreateComplexObjectForView();
-        public void IncreaseNumberOfEmployees(ComplexObjectDTO @object);
+        public List<ITree<Department>> CreateComplexObjectForView();
+        public void IncreaseNumberOfEmployees(string department);
 
     }
 }

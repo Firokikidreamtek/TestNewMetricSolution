@@ -25,7 +25,7 @@ namespace Mapper
             CreateMap<PurchasingDepartmentDTO, PurchasingDepartment>().ReverseMap();
             CreateMap<QualityControlDepartmentDTO, QualityControlDepartment>().ReverseMap();
             CreateMap<AccountingDepartmentDTO, AccountingDepartment>().ReverseMap();
-            CreateMap<ComplexObjectDTO, ComplexObject>().ReverseMap();
+            CreateMap<ComplexObjectDTO, Department>().ReverseMap();
         }
     }
 }
