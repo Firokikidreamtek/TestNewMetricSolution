@@ -14,7 +14,6 @@ namespace NewMetricSolution.DB
         public EmployeesBase(ApplicationDbContext databaseContext)
         {
             _databaseContext = databaseContext;
-
         }
 
 
